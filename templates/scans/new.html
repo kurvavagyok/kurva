@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}New Scan - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h1 class="h3 mb-0">Create New Scan</h1>
+                <p class="text-muted">Configure and launch a new security scan</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Scan Configuration</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('new_scan') }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Scan Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="form-text">Enter a descriptive name for your scan</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="scan_type" class="form-label">Scan Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="scan_type" name="scan_type" required>
+                                <option value="">Select scan type</option>
+                                <option value="network">Network Scan</option>
+                                <option value="web">Web Application Scan</option>
+                                <option value="infrastructure">Infrastructure Scan</option>
+                                <option value="compliance">Compliance Scan</option>
+                            </select>
+                            <div class="form-text">Choose the type of security scan to perform</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="target" class="form-label">Target <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="target" name="target" required>
+                            <div class="form-text">Enter the target URL, IP address, or network range</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            <div class="form-text">Optional description for this scan</div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6 class="text-primary mb-3">Advanced Options</h6>
+                        
+                        <div class="mb-3">
+                            <label for="ports" class="form-label">Port Range</label>
+                            <input type="text" class="form-control" id="ports" name="ports" placeholder="1-1000">
+                            <div class="form-text">Specify port range (e.g., 1-1000, 80,443,8080)</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="timeout" class="form-label">Timeout (seconds)</label>
+                            <input type="number" class="form-control" id="timeout" name="timeout" value="300" min="60" max="3600">
+                            <div class="form-text">Maximum time to wait for scan completion</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="aggressive" name="aggressive">
+                                <label class="form-check-label" for="aggressive">
+                                    Aggressive Scan
+                                </label>
+                                <div class="form-text">Enable more thorough but potentially intrusive scanning</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="stealth" name="stealth">
+                                <label class="form-check-label" for="stealth">
+                                    Stealth Mode
+                                </label>
+                                <div class="form-text">Attempt to avoid detection by security systems</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i>Start Scan
+                            </button>
+                            <a href="{{ url_for('scans') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Scan Types</h6>
+                </div>
+                <div class="card-body">
+                    <div class="scan-type-info">
+                        <div class="mb-3">
+                            <h6><i class="fas fa-network-wired text-info me-2"></i>Network Scan</h6>
+                            <p class="small text-muted">Scans network infrastructure for open ports, services, and vulnerabilities</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6><i class="fas fa-globe text-info me-2"></i>Web Application Scan</h6>
+                            <p class="small text-muted">Tests web applications for security vulnerabilities like XSS, SQL injection, etc.</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6><i class="fas fa-server text-info me-2"></i>Infrastructure Scan</h6>
+                            <p class="small text-muted">Comprehensive scan of IT infrastructure including servers, databases, and services</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6><i class="fas fa-shield-check text-info me-2"></i>Compliance Scan</h6>
+                            <p class="small text-muted">Checks compliance with security standards like GDPR, ISO 27001, SOC 2</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            <small>Start with a basic scan before using aggressive mode</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            <small>Use stealth mode for production environments</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            <small>Compliance scans are best run during maintenance windows</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            <small>Network scans can take longer for large IP ranges</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scanTypeSelect = document.getElementById('scan_type');
+    const targetInput = document.getElementById('target');
+    const portsInput = document.getElementById('ports');
+    
+    scanTypeSelect.addEventListener('change', function() {
+        const scanType = this.value;
+        
+        // Update placeholder text based on scan type
+        switch(scanType) {
+            case 'network':
+                targetInput.placeholder = 'e.g., 192.168.1.0/24 or 10.0.0.1';
+                portsInput.value = '1-1000';
+                break;
+            case 'web':
+                targetInput.placeholder = 'e.g., https://example.com';
+                portsInput.value = '80,443,8080,8443';
+                break;
+            case 'infrastructure':
+                targetInput.placeholder = 'e.g., server.example.com or 192.168.1.100';
+                portsInput.value = '1-65535';
+                break;
+            case 'compliance':
+                targetInput.placeholder = 'e.g., https://example.com or 192.168.1.0/24';
+                portsInput.value = '80,443';
+                break;
+            default:
+                targetInput.placeholder = 'Enter target URL, IP, or network range';
+                portsInput.value = '';
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const target = targetInput.value.trim();
+        const scanType = scanTypeSelect.value;
+        
+        if (!target) {
+            e.preventDefault();
+            alert('Please enter a target');
+            return;
+        }
+        
+        if (!scanType) {
+            e.preventDefault();
+            alert('Please select a scan type');
+            return;
+        }
+        
+        // Validate target format based on scan type
+        if (scanType === 'web' && !target.startsWith('http')) {
+            if (confirm('Web scan target should start with http:// or https://. Do you want to add https:// prefix?')) {
+                targetInput.value = 'https://' + target;
+            }
+        }
+        
+        // Disable submit button to prevent double submission
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Scan...';
+    });
+});
+</script>
+{% endblock %}

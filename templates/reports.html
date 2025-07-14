@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Security Reports</h1>
+                    <p class="text-muted">Generate and manage security reports</p>
+                </div>
+                <a href="{{ url_for('new_report') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Report
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-primary">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Reports</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-reports">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-success">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Completed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="completed-reports">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-warning">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Generating</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="generating-reports">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-cog fa-spin fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-danger">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Failed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="failed-reports">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="report_type" class="form-label">Report Type</label>
+                            <select class="form-select" id="report_type" name="report_type">
+                                <option value="">All Types</option>
+                                <option value="executive" {{ 'selected' if report_type_filter == 'executive' }}>Executive</option>
+                                <option value="technical" {{ 'selected' if report_type_filter == 'technical' }}>Technical</option>
+                                <option value="compliance" {{ 'selected' if report_type_filter == 'compliance' }}>Compliance</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending</option>
+                                <option value="generating" {{ 'selected' if status_filter == 'generating' }}>Generating</option>
+                                <option value="completed" {{ 'selected' if status_filter == 'completed' }}>Completed</option>
+                                <option value="failed" {{ 'selected' if status_filter == 'failed' }}>Failed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" placeholder="Search reports..." value="{{ request.args.get('search', '') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-1"></i>Filter
+                                </button>
+                                <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reports Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Report Results</h6>
+                </div>
+                <div class="card-body">
+                    {% if reports.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Type</th>
+                                        <th>Format</th>
+                                        <th>Status</th>
+                                        <th>File Size</th>
+                                        <th>Created</th>
+                                        <th>Completed</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for report in reports.items %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ report.title }}</strong>
+                                            {% if report.executive_summary %}
+                                                <br>
+                                                <small class="text-muted">{{ report.executive_summary[:100] }}...</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ report.report_type }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ report.format.upper() }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if report.status == 'completed' else 'warning' if report.status == 'generating' else 'danger' if report.status == 'failed' else 'secondary' }}">
+                                                {{ report.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if report.file_size %}
+                                                {{ (report.file_size / 1024 / 1024) | round(2) }} MB
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if report.completed_at %}
+                                                {{ report.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                {% if report.status == 'completed' and report.file_path %}
+                                                <a href="{{ url_for('download_report', report_id=report.id) }}" class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% if report.status in ['completed', 'failed'] %}
+                                                <button class="btn btn-sm btn-outline-primary" onclick="regenerateReport({{ report.id }})">
+                                                    <i class="fas fa-redo"></i>
+                                                </button>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteReport({{ report.id }})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if reports.pages > 1 %}
+                        <nav aria-label="Report pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if reports.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('reports', page=reports.prev_num, report_type=report_type_filter, status=status_filter) }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in reports.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != reports.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('reports', page=page_num, report_type=report_type_filter, status=status_filter) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if reports.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('reports', page=reports.next_num, report_type=report_type_filter, status=status_filter) }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No reports found</h5>
+                            <p class="text-muted">Create your first security report</p>
+                            <a href="{{ url_for('new_report') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create New Report
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+<script>
+function regenerateReport(reportId) {
+    if (confirm('Are you sure you want to regenerate this report?')) {
+        fetch(`/api/reports/${reportId}/regenerate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while regenerating the report');
+        });
+    }
+}
+
+function deleteReport(reportId) {
+    if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+        fetch(`/api/reports/${reportId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the report');
+        });
+    }
+}
+
+// Load report statistics
+document.addEventListener('DOMContentLoaded', function() {
+    loadReportStats();
+});
+
+// Auto-refresh for generating reports
+setInterval(function() {
+    const generatingReports = document.querySelectorAll('.badge.bg-warning');
+    if (generatingReports.length > 0) {
+        location.reload();
+    }
+}, 30000); // Refresh every 30 seconds
+</script>
+{% endblock %}

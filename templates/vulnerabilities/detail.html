@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Vulnerability Details - {{ vulnerability.title }} - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">{{ vulnerability.title }}</h1>
+                    <p class="text-muted">{{ vulnerability.category }} vulnerability</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-info" onclick="analyzeWithAI()">
+                        <i class="fas fa-brain me-2"></i>AI Analysis
+                    </button>
+                    <a href="{{ url_for('vulnerabilities') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Vulnerabilities
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status and Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <strong>Status:</strong>
+                            <span class="badge bg-{{ 'success' if vulnerability.status == 'resolved' else 'warning' if vulnerability.status == 'in_progress' else 'danger' }} ms-2">
+                                {{ vulnerability.status.replace('_', ' ').title() }}
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Severity:</strong>
+                            <span class="badge bg-{{ 'danger' if vulnerability.severity == 'critical' else 'warning' if vulnerability.severity == 'high' else 'info' if vulnerability.severity == 'medium' else 'success' }} ms-2">
+                                {{ vulnerability.severity.title() }}
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>CVSS Score:</strong>
+                            <span class="ms-2">{{ vulnerability.cvss_score or 'N/A' }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-warning" onclick="updateStatus('in_progress')">Mark In Progress</button>
+                                <button class="btn btn-sm btn-outline-success" onclick="updateStatus('resolved')">Mark Resolved</button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="updateStatus('false_positive')">False Positive</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Description -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Description</h6>
+                </div>
+                <div class="card-body">
+                    <p>{{ vulnerability.description }}</p>
+                </div>
+            </div>
+            
+            <!-- Technical Details -->
+            {% if vulnerability.technical_details %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Technical Details</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded">{{ vulnerability.technical_details }}</pre>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Proof of Concept -->
+            {% if vulnerability.proof_of_concept %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-warning">Proof of Concept</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This information is for authorized security testing only.
+                    </div>
+                    <pre class="bg-light p-3 rounded">{{ vulnerability.proof_of_concept }}</pre>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- AI Analysis -->
+            {% if vulnerability.ai_analysis %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-brain me-2"></i>AI Analysis
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="ai-analysis-content">{{ vulnerability.ai_analysis }}</div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Remediation -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-success">Remediation</h6>
+                </div>
+                <div class="card-body">
+                    {% if vulnerability.remediation %}
+                        <p>{{ vulnerability.remediation }}</p>
+                    {% else %}
+                        <p class="text-muted">No remediation steps available. Consider running AI analysis for recommendations.</p>
+                    {% endif %}
+                    
+                    {% if vulnerability.ai_remediation %}
+                        <hr>
+                        <h6 class="text-info">
+                            <i class="fas fa-brain me-2"></i>AI-Generated Remediation Steps
+                        </h6>
+                        <div>{{ vulnerability.ai_remediation }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Vulnerability Info -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Vulnerability Information</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>CVE ID:</strong></td>
+                            <td>
+                                {% if vulnerability.cve_id %}
+                                    <a href="https://nvd.nist.gov/vuln/detail/{{ vulnerability.cve_id }}" target="_blank">
+                                        {{ vulnerability.cve_id }}
+                                    </a>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>CWE ID:</strong></td>
+                            <td>{{ vulnerability.cwe_id or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Host:</strong></td>
+                            <td>{{ vulnerability.host or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Port:</strong></td>
+                            <td>{{ vulnerability.port or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Service:</strong></td>
+                            <td>{{ vulnerability.service or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>URL:</strong></td>
+                            <td>
+                                {% if vulnerability.url %}
+                                    <a href="{{ vulnerability.url }}" target="_blank">{{ vulnerability.url[:30] }}...</a>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Discovered:</strong></td>
+                            <td>{{ vulnerability.discovered_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% if vulnerability.resolved_at %}
+                        <tr>
+                            <td><strong>Resolved:</strong></td>
+                            <td>{{ vulnerability.resolved_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Assignment -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Assignment</h6>
+                </div>
+                <div class="card-body">
+                    <form id="assignmentForm">
+                        <div class="mb-3">
+                            <label for="assigned_to" class="form-label">Assigned To</label>
+                            <input type="text" class="form-control" id="assigned_to" value="{{ vulnerability.assigned_to or '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="remediation_priority" class="form-label">Priority</label>
+                            <select class="form-select" id="remediation_priority">
+                                <option value="low" {{ 'selected' if vulnerability.remediation_priority == 'low' }}>Low</option>
+                                <option value="medium" {{ 'selected' if vulnerability.remediation_priority == 'medium' }}>Medium</option>
+                                <option value="high" {{ 'selected' if vulnerability.remediation_priority == 'high' }}>High</option>
+                                <option value="critical" {{ 'selected' if vulnerability.remediation_priority == 'critical' }}>Critical</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="updateAssignment()">
+                            Update Assignment
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Risk Score -->
+            {% if vulnerability.exploitability_score %}
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-warning">Risk Assessment</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-warning">{{ vulnerability.exploitability_score }}/10</div>
+                                <small class="text-muted">Exploitability Score</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-{{ 'danger' if vulnerability.exploitability_score >= 7 else 'warning' if vulnerability.exploitability_score >= 4 else 'success' }}" 
+                                     role="progressbar" style="width: {{ vulnerability.exploitability_score * 10 }}%">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Related Scan -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Related Scan</h6>
+                </div>
+                <div class="card-body">
+                    {% if vulnerability.scan %}
+                    <p><strong>{{ vulnerability.scan.name }}</strong></p>
+                    <p class="text-muted">{{ vulnerability.scan.scan_type.title() }} scan</p>
+                    <a href="{{ url_for('scan_detail', scan_id=vulnerability.scan_id) }}" class="btn btn-sm btn-outline-primary">
+                        View Scan Details
+                    </a>
+                    {% else %}
+                    <p class="text-muted">No related scan information available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateStatus(status) {
+    if (confirm(`Are you sure you want to mark this vulnerability as ${status.replace('_', ' ')}?`)) {
+        fetch(`/api/vulnerabilities/{{ vulnerability.id }}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: status })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the status');
+        });
+    }
+}
+
+function updateAssignment() {
+    const assignedTo = document.getElementById('assigned_to').value;
+    const priority = document.getElementById('remediation_priority').value;
+    
+    fetch(`/api/vulnerabilities/{{ vulnerability.id }}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            assigned_to: assignedTo,
+            remediation_priority: priority
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            alert('Assignment updated successfully');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the assignment');
+    });
+}
+
+function analyzeWithAI() {
+    const button = event.target;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+    
+    fetch(`/api/vulnerabilities/{{ vulnerability.id }}/analyze`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            // Update the AI analysis section
+            const analysisContent = document.getElementById('ai-analysis-content');
+            if (analysisContent) {
+                analysisContent.innerHTML = JSON.stringify(data.analysis, null, 2);
+            } else {
+                location.reload();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred during AI analysis');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-brain me-2"></i>AI Analysis';
+    });
+}
+</script>
+{% endblock %}

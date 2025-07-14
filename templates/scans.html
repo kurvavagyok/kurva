@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Scans - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Security Scans</h1>
+                    <p class="text-muted">Manage and monitor your security scans</p>
+                </div>
+                <a href="{{ url_for('new_scan') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>New Scan
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending</option>
+                                <option value="running" {{ 'selected' if status_filter == 'running' }}>Running</option>
+                                <option value="completed" {{ 'selected' if status_filter == 'completed' }}>Completed</option>
+                                <option value="failed" {{ 'selected' if status_filter == 'failed' }}>Failed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="scan_type" class="form-label">Scan Type</label>
+                            <select class="form-select" id="scan_type" name="scan_type">
+                                <option value="">All Types</option>
+                                <option value="network" {{ 'selected' if scan_type_filter == 'network' }}>Network</option>
+                                <option value="web" {{ 'selected' if scan_type_filter == 'web' }}>Web</option>
+                                <option value="infrastructure" {{ 'selected' if scan_type_filter == 'infrastructure' }}>Infrastructure</option>
+                                <option value="compliance" {{ 'selected' if scan_type_filter == 'compliance' }}>Compliance</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" placeholder="Search scans..." value="{{ request.args.get('search', '') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-1"></i>Filter
+                                </button>
+                                <a href="{{ url_for('scans') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scans Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Scan Results</h6>
+                </div>
+                <div class="card-body">
+                    {% if scans.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Target</th>
+                                        <th>Status</th>
+                                        <th>Progress</th>
+                                        <th>Vulnerabilities</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for scan in scans.items %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('scan_detail', scan_id=scan.id) }}" class="text-decoration-none">
+                                                <strong>{{ scan.name }}</strong>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ scan.scan_type }}</span>
+                                        </td>
+                                        <td>
+                                            <code>{{ scan.target }}</code>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if scan.status == 'completed' else 'warning' if scan.status == 'running' else 'danger' if scan.status == 'failed' else 'secondary' }}">
+                                                {{ scan.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" role="progressbar" style="width: {{ scan.progress }}%">
+                                                    {{ scan.progress }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'danger' if scan.high_severity_count > 0 else 'warning' if scan.medium_severity_count > 0 else 'success' }}">
+                                                {{ scan.vulnerability_count }}
+                                            </span>
+                                        </td>
+                                        <td>{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('scan_detail', scan_id=scan.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if scan.status == 'running' %}
+                                                <button class="btn btn-sm btn-outline-warning" onclick="stopScan({{ scan.id }})">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                                {% elif scan.status in ['completed', 'failed'] %}
+                                                <button class="btn btn-sm btn-outline-success" onclick="restartScan({{ scan.id }})">
+                                                    <i class="fas fa-redo"></i>
+                                                </button>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteScan({{ scan.id }})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if scans.pages > 1 %}
+                        <nav aria-label="Scan pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if scans.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('scans', page=scans.prev_num, status=status_filter, scan_type=scan_type_filter) }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in scans.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != scans.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('scans', page=page_num, status=status_filter, scan_type=scan_type_filter) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if scans.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('scans', page=scans.next_num, status=status_filter, scan_type=scan_type_filter) }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No scans found</h5>
+                            <p class="text-muted">Get started by creating your first security scan</p>
+                            <a href="{{ url_for('new_scan') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create New Scan
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/scans.js') }}"></script>
+<script>
+function stopScan(scanId) {
+    if (confirm('Are you sure you want to stop this scan?')) {
+        fetch(`/api/scans/${scanId}/stop`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while stopping the scan');
+        });
+    }
+}
+
+function restartScan(scanId) {
+    if (confirm('Are you sure you want to restart this scan?')) {
+        fetch(`/api/scans/${scanId}/restart`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while restarting the scan');
+        });
+    }
+}
+
+function deleteScan(scanId) {
+    if (confirm('Are you sure you want to delete this scan? This action cannot be undone.')) {
+        fetch(`/api/scans/${scanId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the scan');
+        });
+    }
+}
+
+// Auto-refresh for running scans
+setInterval(function() {
+    const runningScans = document.querySelectorAll('.badge.bg-warning');
+    if (runningScans.length > 0) {
+        location.reload();
+    }
+}, 30000); // Refresh every 30 seconds
+</script>
+{% endblock %}

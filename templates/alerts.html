@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Security Alerts</h1>
+                    <p class="text-muted">Monitor and manage security alerts</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="markAllAsRead()">
+                        <i class="fas fa-check me-2"></i>Mark All as Read
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="clearDismissed()">
+                        <i class="fas fa-trash me-2"></i>Clear Dismissed
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alert Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-danger">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Critical</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="critical-alerts">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-warning">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Warning</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="warning-alerts">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-info">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Info</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="info-alerts">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-info-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-secondary">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Unread</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="unread-alerts">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bell fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-2">
+                            <label for="severity" class="form-label">Severity</label>
+                            <select class="form-select" id="severity" name="severity">
+                                <option value="">All Severities</option>
+                                <option value="critical">Critical</option>
+                                <option value="error">Error</option>
+                                <option value="warning">Warning</option>
+                                <option value="info">Info</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="unread">Unread</option>
+                                <option value="read">Read</option>
+                                <option value="dismissed">Dismissed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="alert_type" class="form-label">Type</label>
+                            <select class="form-select" id="alert_type" name="alert_type">
+                                <option value="">All Types</option>
+                                <option value="scan_complete">Scan Complete</option>
+                                <option value="vulnerability_found">Vulnerability Found</option>
+                                <option value="system_alert">System Alert</option>
+                                <option value="report_ready">Report Ready</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" placeholder="Search alerts...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-1"></i>Filter
+                                </button>
+                                <a href="{{ url_for('alerts') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alerts List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Alerts</h6>
+                </div>
+                <div class="card-body">
+                    {% if alerts.items %}
+                        <div id="alerts-container">
+                            {% for alert in alerts.items %}
+                            <div class="alert alert-{{ alert.severity }} alert-dismissible fade show mb-3" 
+                                 data-alert-id="{{ alert.id }}" 
+                                 data-severity="{{ alert.severity }}"
+                                 data-status="{{ alert.status }}">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <i class="fas fa-{{ 'exclamation-circle' if alert.severity == 'critical' else 'exclamation-triangle' if alert.severity == 'warning' else 'info-circle' if alert.severity == 'info' else 'times-circle' }} fa-lg"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="alert-heading mb-1">{{ alert.title }}</h6>
+                                                <p class="mb-2">{{ alert.message }}</p>
+                                                <div class="d-flex gap-3">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        {{ alert.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                                    </small>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-tag me-1"></i>
+                                                        {{ alert.alert_type.replace('_', ' ').title() }}
+                                                    </small>
+                                                    {% if alert.status == 'unread' %}
+                                                    <span class="badge bg-primary">New</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="btn-group" role="group">
+                                                {% if alert.status == 'unread' %}
+                                                <button class="btn btn-sm btn-outline-primary" onclick="markAsRead({{ alert.id }})">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                {% endif %}
+                                                {% if alert.related_scan_id %}
+                                                <a href="{{ url_for('scan_detail', scan_id=alert.related_scan_id) }}" class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% if alert.related_vulnerability_id %}
+                                                <a href="{{ url_for('vulnerability_detail', vuln_id=alert.related_vulnerability_id) }}" class="btn btn-sm btn-outline-warning">
+                                                    <i class="fas fa-bug"></i>
+                                                </a>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-secondary" onclick="dismissAlert({{ alert.id }})">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        {% if alert.context %}
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-link p-0" onclick="toggleContext({{ alert.id }})">
+                                                <i class="fas fa-chevron-down"></i> Show Details
+                                            </button>
+                                            <div id="context-{{ alert.id }}" class="collapse mt-2">
+                                                <div class="bg-light p-2 rounded">
+                                                    <pre class="mb-0">{{ alert.context | tojsonpretty }}</pre>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if alerts.pages > 1 %}
+                        <nav aria-label="Alert pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if alerts.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('alerts', page=alerts.prev_num) }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in alerts.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != alerts.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('alerts', page=page_num) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if alerts.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('alerts', page=alerts.next_num) }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No alerts found</h5>
+                            <p class="text-muted">All clear! No security alerts at this time.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function markAsRead(alertId) {
+    fetch(`/api/alerts/${alertId}/acknowledge`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update the alert visually
+            const alertElement = document.querySelector(`[data-alert-id="${alertId}"]`);
+            if (alertElement) {
+                const badge = alertElement.querySelector('.badge.bg-primary');
+                if (badge) badge.remove();
+                
+                const markReadBtn = alertElement.querySelector('button[onclick*="markAsRead"]');
+                if (markReadBtn) markReadBtn.remove();
+                
+                alertElement.setAttribute('data-status', 'read');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while marking the alert as read');
+    });
+}
+
+function dismissAlert(alertId) {
+    if (confirm('Are you sure you want to dismiss this alert?')) {
+        // For now, just hide the alert visually
+        const alertElement = document.querySelector(`[data-alert-id="${alertId}"]`);
+        if (alertElement) {
+            alertElement.style.display = 'none';
+        }
+    }
+}
+
+function markAllAsRead() {
+    if (confirm('Mark all alerts as read?')) {
+        // Get all unread alerts
+        const unreadAlerts = document.querySelectorAll('[data-status="unread"]');
+        unreadAlerts.forEach(alert => {
+            const alertId = alert.getAttribute('data-alert-id');
+            markAsRead(alertId);
+        });
+    }
+}
+
+function clearDismissed() {
+    if (confirm('Clear all dismissed alerts?')) {
+        // This would need backend implementation
+        alert('Feature not yet implemented');
+    }
+}
+
+function toggleContext(alertId) {
+    const context = document.getElementById(`context-${alertId}`);
+    const button = event.target;
+    const icon = button.querySelector('i');
+    
+    if (context.classList.contains('show')) {
+        context.classList.remove('show');
+        button.innerHTML = '<i class="fas fa-chevron-down"></i> Show Details';
+    } else {
+        context.classList.add('show');
+        button.innerHTML = '<i class="fas fa-chevron-up"></i> Hide Details';
+    }
+}
+
+// Load alert statistics
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('[data-alert-id]');
+    const stats = {
+        critical: 0,
+        error: 0,
+        warning: 0,
+        info: 0,
+        unread: 0
+    };
+    
+    alerts.forEach(alert => {
+        const severity = alert.getAttribute('data-severity');
+        const status = alert.getAttribute('data-status');
+        
+        if (stats.hasOwnProperty(severity)) {
+            stats[severity]++;
+        }
+        
+        if (status === 'unread') {
+            stats.unread++;
+        }
+    });
+    
+    // Update counters
+    document.getElementById('critical-alerts').textContent = stats.critical;
+    document.getElementById('warning-alerts').textContent = stats.warning;
+    document.getElementById('info-alerts').textContent = stats.info;
+    document.getElementById('unread-alerts').textContent = stats.unread;
+});
+
+// Auto-refresh for new alerts
+setInterval(function() {
+    // In a real implementation, this would check for new alerts via API
+    // For now, we'll just reload if there are unread alerts
+    const unreadCount = document.getElementById('unread-alerts').textContent;
+    if (parseInt(unreadCount) > 0) {
+        // Could implement WebSocket or polling here
+    }
+}, 60000); // Check every minute
+</script>
+{% endblock %}

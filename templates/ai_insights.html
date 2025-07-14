@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}AI Insights - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-brain text-primary me-2"></i>AI Security Insights
+                    </h1>
+                    <p class="text-muted">Advanced AI-powered security analysis and recommendations</p>
+                </div>
+                <button class="btn btn-primary" onclick="refreshInsights()">
+                    <i class="fas fa-sync me-2"></i>Refresh Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Analysis Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-robot text-primary me-2"></i>AI Analysis Status
+                            </h5>
+                            <p class="card-text">Multi-model AI analysis using GPT-4, Claude, and Gemini</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div id="ai-status" class="badge bg-success fs-6">Ready</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Security Posture -->
+    {% if insights and insights.insights %}
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-shield-alt me-2"></i>Security Posture Assessment
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">AI Assessment</h6>
+                        <p class="mb-0">{{ insights.insights.security_posture or 'Analyzing security posture...' }}</p>
+                    </div>
+                    
+                    {% if insights.insights.overall_score %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <div class="display-4 text-primary">{{ insights.insights.overall_score }}/10</div>
+                                <small class="text-muted">Overall Security Score</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="progress mb-2" style="height: 30px;">
+                                <div class="progress-bar bg-{{ 'success' if insights.insights.overall_score >= 8 else 'warning' if insights.insights.overall_score >= 6 else 'danger' }}" 
+                                     role="progressbar" style="width: {{ insights.insights.overall_score * 10 }}%">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {% if insights.insights.overall_score >= 8 %}
+                                    Excellent security posture
+                                {% elif insights.insights.overall_score >= 6 %}
+                                    Good security posture with room for improvement
+                                {% else %}
+                                    Security posture needs attention
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Top Priorities
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if insights.insights.risk_priorities %}
+                        <ul class="list-unstyled">
+                            {% for priority in insights.insights.risk_priorities[:5] %}
+                            <li class="mb-2">
+                                <i class="fas fa-arrow-right text-warning me-2"></i>
+                                {{ priority }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No immediate priorities identified</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Key Findings -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-search me-2"></i>Key Findings
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if insights.insights.key_findings %}
+                        {% for finding in insights.insights.key_findings %}
+                        <div class="alert alert-light border-left-info mb-2">
+                            <i class="fas fa-lightbulb text-info me-2"></i>
+                            {{ finding }}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No significant findings at this time</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-chart-line me-2"></i>Trending Threats
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if insights.insights.trending_threats %}
+                        {% for threat in insights.insights.trending_threats %}
+                        <div class="alert alert-warning border-left-warning mb-2">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            {{ threat }}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No trending threats detected</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recommendations -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-lightbulb me-2"></i>AI Recommendations
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if insights.insights.recommendations %}
+                        <div class="row">
+                            {% for recommendation in insights.insights.recommendations %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-success">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start">
+                                            <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+                                            <div>
+                                                <p class="mb-0">{{ recommendation }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No specific recommendations at this time. Your security posture appears to be in good standing.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Items -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-danger">
+                        <i class="fas fa-tasks me-2"></i>Immediate Action Items
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if insights.insights.action_items %}
+                        <div class="list-group">
+                            {% for action in insights.insights.action_items %}
+                            <div class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Action Required</div>
+                                    {{ action }}
+                                </div>
+                                <span class="badge bg-danger rounded-pill">High</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            No immediate action items. Continue monitoring your security posture.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Insights Available -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-brain fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">AI Analysis Not Available</h5>
+                    <p class="text-muted">Click "Refresh Analysis" to generate AI insights for your security data.</p>
+                    <button class="btn btn-primary" onclick="refreshInsights()">
+                        <i class="fas fa-sync me-2"></i>Generate AI Insights
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- AI Models Status -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cogs me-2"></i>AI Models Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="fas fa-robot fa-2x text-primary mb-2"></i>
+                                <h6>GPT-4</h6>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="fas fa-brain fa-2x text-info mb-2"></i>
+                                <h6>Claude-3</h6>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="fas fa-microchip fa-2x text-warning mb-2"></i>
+                                <h6>Gemini Pro</h6>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="fas fa-network-wired fa-2x text-secondary mb-2"></i>
+                                <h6>Ensemble</h6>
+                                <span class="badge bg-success">Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshInsights() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+    
+    document.getElementById('ai-status').textContent = 'Analyzing...';
+    document.getElementById('ai-status').className = 'badge bg-warning fs-6';
+    
+    fetch('/api/dashboard/ai-insights', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+            document.getElementById('ai-status').textContent = 'Error';
+            document.getElementById('ai-status').className = 'badge bg-danger fs-6';
+        } else {
+            document.getElementById('ai-status').textContent = 'Complete';
+            document.getElementById('ai-status').className = 'badge bg-success fs-6';
+            
+            // Reload page to show new insights
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while generating AI insights');
+        document.getElementById('ai-status').textContent = 'Error';
+        document.getElementById('ai-status').className = 'badge bg-danger fs-6';
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+
+// Periodically update AI status
+setInterval(function() {
+    // In a real implementation, this would check AI service status
+    const statusElement = document.getElementById('ai-status');
+    if (statusElement.textContent === 'Ready') {
+        // AI is ready, no action needed
+    }
+}, 30000);
+</script>
+{% endblock %}

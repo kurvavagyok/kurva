@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}New Report - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h1 class="h3 mb-0">Create New Report</h1>
+                <p class="text-muted">Generate a comprehensive security report</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Report Configuration</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('new_report') }}">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Report Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                            <div class="form-text">Enter a descriptive title for your report</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="report_type" class="form-label">Report Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="report_type" name="report_type" required>
+                                <option value="">Select report type</option>
+                                <option value="executive">Executive Report</option>
+                                <option value="technical">Technical Report</option>
+                                <option value="compliance">Compliance Report</option>
+                            </select>
+                            <div class="form-text">Choose the type of report to generate</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="format" class="form-label">Format</label>
+                            <select class="form-select" id="format" name="format">
+                                <option value="pdf" selected>PDF</option>
+                                <option value="html">HTML</option>
+                                <option value="json">JSON</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            <div class="form-text">Optional description for this report</div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6 class="text-primary mb-3">Scope Configuration</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Include Scans</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="scan_scope" id="all_scans" value="all" checked>
+                                <label class="form-check-label" for="all_scans">
+                                    All My Scans
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="scan_scope" id="selected_scans" value="selected">
+                                <label class="form-check-label" for="selected_scans">
+                                    Selected Scans
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="scan_scope" id="date_range" value="date_range">
+                                <label class="form-check-label" for="date_range">
+                                    Date Range
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="scan_selection" class="mb-3" style="display: none;">
+                            <label class="form-label">Select Scans</label>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for scan in scans %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scan_ids" value="{{ scan.id }}" id="scan_{{ scan.id }}">
+                                    <label class="form-check-label" for="scan_{{ scan.id }}">
+                                        <strong>{{ scan.name }}</strong>
+                                        <small class="text-muted">({{ scan.scan_type }}, {{ scan.created_at.strftime('%Y-%m-%d') }})</small>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div id="date_range_selection" class="mb-3" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="date_range_start" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="date_range_start" name="date_range_start">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="date_range_end" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="date_range_end" name="date_range_end">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6 class="text-primary mb-3">Advanced Options</h6>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="include_ai_insights" name="include_ai_insights" checked>
+                                <label class="form-check-label" for="include_ai_insights">
+                                    Include AI Insights
+                                </label>
+                                <div class="form-text">Enable AI-powered analysis and recommendations</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="include_charts" name="include_charts" checked>
+                                <label class="form-check-label" for="include_charts">
+                                    Include Charts and Graphs
+                                </label>
+                                <div class="form-text">Add visual representations of data</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="include_remediation" name="include_remediation" checked>
+                                <label class="form-check-label" for="include_remediation">
+                                    Include Remediation Steps
+                                </label>
+                                <div class="form-text">Add detailed remediation recommendations</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i>Generate Report
+                            </button>
+                            <a href="{{ url_for('reports') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Report Types</h6>
+                </div>
+                <div class="card-body">
+                    <div class="report-type-info">
+                        <div class="mb-3">
+                            <h6><i class="fas fa-briefcase text-info me-2"></i>Executive Report</h6>
+                            <p class="small text-muted">High-level security overview for executives and management. Focuses on business impact and strategic recommendations.</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6><i class="fas fa-code text-info me-2"></i>Technical Report</h6>
+                            <p class="small text-muted">Detailed technical analysis for security teams. Includes vulnerability details, technical remediation steps, and implementation guidance.</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6><i class="fas fa-shield-check text-info me-2"></i>Compliance Report</h6>
+                            <p class="small text-muted">Compliance status and regulatory requirements. Covers GDPR, ISO 27001, SOC 2, and other security standards.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">AI-Powered Features</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-brain text-primary me-2"></i>
+                            <small>Automated executive summaries</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-brain text-primary me-2"></i>
+                            <small>Risk prioritization recommendations</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-brain text-primary me-2"></i>
+                            <small>Trend analysis and predictions</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-brain text-primary me-2"></i>
+                            <small>Compliance gap analysis</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-brain text-primary me-2"></i>
+                            <small>Security posture assessment</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            <small>Executive reports are best for board presentations</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            <small>Technical reports include detailed remediation steps</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            <small>Compliance reports help with audit preparation</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            <small>Include AI insights for enhanced analysis</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scopeRadios = document.querySelectorAll('input[name="scan_scope"]');
+    const scanSelection = document.getElementById('scan_selection');
+    const dateRangeSelection = document.getElementById('date_range_selection');
+    
+    scopeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            scanSelection.style.display = this.value === 'selected' ? 'block' : 'none';
+            dateRangeSelection.style.display = this.value === 'date_range' ? 'block' : 'none';
+        });
+    });
+    
+    // Report type descriptions
+    const reportTypeSelect = document.getElementById('report_type');
+    const titleInput = document.getElementById('title');
+    
+    reportTypeSelect.addEventListener('change', function() {
+        const reportType = this.value;
+        const currentDate = new Date().toISOString().split('T')[0];
+        
+        switch(reportType) {
+            case 'executive':
+                if (!titleInput.value) {
+                    titleInput.value = `Executive Security Report - ${currentDate}`;
+                }
+                break;
+            case 'technical':
+                if (!titleInput.value) {
+                    titleInput.value = `Technical Security Analysis - ${currentDate}`;
+                }
+                break;
+            case 'compliance':
+                if (!titleInput.value) {
+                    titleInput.value = `Compliance Assessment Report - ${currentDate}`;
+                }
+                break;
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const title = titleInput.value.trim();
+        const reportType = reportTypeSelect.value;
+        
+        if (!title) {
+            e.preventDefault();
+            alert('Please enter a report title');
+            return;
+        }
+        
+        if (!reportType) {
+            e.preventDefault();
+            alert('Please select a report type');
+            return;
+        }
+        
+        // Check if selected scans scope is chosen but no scans are selected
+        const selectedScopeRadio = document.getElementById('selected_scans');
+        if (selectedScopeRadio.checked) {
+            const selectedScans = document.querySelectorAll('input[name="scan_ids"]:checked');
+            if (selectedScans.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one scan or choose a different scope');
+                return;
+            }
+        }
+        
+        // Check date range validity
+        const dateRangeRadio = document.getElementById('date_range');
+        if (dateRangeRadio.checked) {
+            const startDate = document.getElementById('date_range_start').value;
+            const endDate = document.getElementById('date_range_end').value;
+            
+            if (!startDate || !endDate) {
+                e.preventDefault();
+                alert('Please select both start and end dates');
+                return;
+            }
+            
+            if (new Date(startDate) > new Date(endDate)) {
+                e.preventDefault();
+                alert('Start date must be before end date');
+                return;
+            }
+        }
+        
+        // Disable submit button to prevent double submission
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating Report...';
+    });
+});
+</script>
+{% endblock %}

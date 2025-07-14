@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Details - {{ scan.name }} - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">{{ scan.name }}</h1>
+                    <p class="text-muted">{{ scan.scan_type.title() }} scan of {{ scan.target }}</p>
+                </div>
+                <div class="btn-group">
+                    {% if scan.status == 'running' %}
+                    <button class="btn btn-warning" onclick="stopScan({{ scan.id }})">
+                        <i class="fas fa-stop me-2"></i>Stop Scan
+                    </button>
+                    {% elif scan.status in ['completed', 'failed'] %}
+                    <button class="btn btn-success" onclick="restartScan({{ scan.id }})">
+                        <i class="fas fa-redo me-2"></i>Restart Scan
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('scans') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Scans
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scan Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <strong>Status:</strong>
+                            <span class="badge bg-{{ 'success' if scan.status == 'completed' else 'warning' if scan.status == 'running' else 'danger' if scan.status == 'failed' else 'secondary' }} ms-2">
+                                {{ scan.status }}
+                            </span>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Progress:</strong>
+                            <div class="progress mt-1" style="height: 20px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ scan.progress }}%">
+                                    {{ scan.progress }}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Priority:</strong>
+                            <span class="badge bg-{{ 'danger' if scan.priority == 'critical' else 'warning' if scan.priority == 'high' else 'info' if scan.priority == 'medium' else 'success' }} ms-2">
+                                {{ scan.priority }}
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Created:</strong>
+                            <span class="ms-2">{{ scan.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Duration:</strong>
+                            <span class="ms-2">{{ (scan.duration // 60) if scan.duration else 0 }} minutes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vulnerability Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-danger">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Critical</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ vuln_stats.critical }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-warning">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">High</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ vuln_stats.high }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-info">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Medium</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ vuln_stats.medium }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-info-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-success">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Low</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ vuln_stats.low }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vulnerabilities -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Vulnerabilities Found</h6>
+                    <div>
+                        <select id="severityFilter" class="form-select form-select-sm">
+                            <option value="">All Severities</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if vulnerabilities %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="vulnerabilityTable">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Severity</th>
+                                        <th>Category</th>
+                                        <th>Host</th>
+                                        <th>Port</th>
+                                        <th>CVE</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for vuln in vulnerabilities %}
+                                    <tr data-severity="{{ vuln.severity }}">
+                                        <td>
+                                            <a href="{{ url_for('vulnerability_detail', vuln_id=vuln.id) }}" class="text-decoration-none">
+                                                {{ vuln.title }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'danger' if vuln.severity == 'critical' else 'warning' if vuln.severity == 'high' else 'info' if vuln.severity == 'medium' else 'success' }}">
+                                                {{ vuln.severity }}
+                                            </span>
+                                        </td>
+                                        <td>{{ vuln.category }}</td>
+                                        <td>{{ vuln.host or 'N/A' }}</td>
+                                        <td>{{ vuln.port or 'N/A' }}</td>
+                                        <td>
+                                            {% if vuln.cve_id %}
+                                                <a href="https://nvd.nist.gov/vuln/detail/{{ vuln.cve_id }}" target="_blank" class="text-decoration-none">
+                                                    {{ vuln.cve_id }}
+                                                </a>
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if vuln.status == 'resolved' else 'warning' if vuln.status == 'in_progress' else 'danger' }}">
+                                                {{ vuln.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('vulnerability_detail', vuln_id=vuln.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button class="btn btn-sm btn-outline-success" onclick="markResolved({{ vuln.id }})">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                            <h5 class="text-muted">No vulnerabilities found</h5>
+                            <p class="text-muted">This scan completed without finding any security issues.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Filter vulnerabilities by severity
+document.getElementById('severityFilter').addEventListener('change', function() {
+    const selectedSeverity = this.value;
+    const rows = document.querySelectorAll('#vulnerabilityTable tbody tr');
+    
+    rows.forEach(row => {
+        const severity = row.getAttribute('data-severity');
+        if (selectedSeverity === '' || severity === selectedSeverity) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Mark vulnerability as resolved
+function markResolved(vulnId) {
+    if (confirm('Mark this vulnerability as resolved?')) {
+        fetch(`/api/vulnerabilities/${vulnId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: 'resolved' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the vulnerability');
+        });
+    }
+}
+
+// Stop scan
+function stopScan(scanId) {
+    if (confirm('Are you sure you want to stop this scan?')) {
+        fetch(`/api/scans/${scanId}/stop`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while stopping the scan');
+        });
+    }
+}
+
+// Restart scan
+function restartScan(scanId) {
+    if (confirm('Are you sure you want to restart this scan?')) {
+        fetch(`/api/scans/${scanId}/restart`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while restarting the scan');
+        });
+    }
+}
+
+// Auto-refresh if scan is running
+{% if scan.status == 'running' %}
+setInterval(function() {
+    location.reload();
+}, 10000); // Refresh every 10 seconds
+{% endif %}
+</script>
+{% endblock %}

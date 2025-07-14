@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Vulnerabilities - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Vulnerabilities</h1>
+                    <p class="text-muted">Manage and track security vulnerabilities</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="exportVulnerabilities()">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                    <button class="btn btn-primary" onclick="bulkUpdateModal()">
+                        <i class="fas fa-edit me-2"></i>Bulk Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-danger">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Critical</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="critical-count">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-warning">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">High</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="high-count">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-info">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Medium</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="medium-count">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-info-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card border-left-success">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Low</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="low-count">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-2">
+                            <label for="severity" class="form-label">Severity</label>
+                            <select class="form-select" id="severity" name="severity">
+                                <option value="">All Severities</option>
+                                <option value="critical" {{ 'selected' if severity_filter == 'critical' }}>Critical</option>
+                                <option value="high" {{ 'selected' if severity_filter == 'high' }}>High</option>
+                                <option value="medium" {{ 'selected' if severity_filter == 'medium' }}>Medium</option>
+                                <option value="low" {{ 'selected' if severity_filter == 'low' }}>Low</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="open" {{ 'selected' if status_filter == 'open' }}>Open</option>
+                                <option value="in_progress" {{ 'selected' if status_filter == 'in_progress' }}>In Progress</option>
+                                <option value="resolved" {{ 'selected' if status_filter == 'resolved' }}>Resolved</option>
+                                <option value="false_positive" {{ 'selected' if status_filter == 'false_positive' }}>False Positive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">All Categories</option>
+                                <option value="Network">Network</option>
+                                <option value="Web Application">Web Application</option>
+                                <option value="Infrastructure">Infrastructure</option>
+                                <option value="Compliance">Compliance</option>
+                                <option value="Configuration">Configuration</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" placeholder="Search vulnerabilities..." value="{{ request.args.get('search', '') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-1"></i>Filter
+                                </button>
+                                <a href="{{ url_for('vulnerabilities') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vulnerabilities Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Vulnerability Results</h6>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAll">
+                        <label class="form-check-label" for="selectAll">
+                            Select All
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if vulnerabilities.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="50"></th>
+                                        <th>Title</th>
+                                        <th>Severity</th>
+                                        <th>Category</th>
+                                        <th>Host</th>
+                                        <th>Port</th>
+                                        <th>CVE</th>
+                                        <th>Status</th>
+                                        <th>Discovered</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for vuln in vulnerabilities.items %}
+                                    <tr>
+                                        <td>
+                                            <input class="form-check-input vuln-checkbox" type="checkbox" value="{{ vuln.id }}">
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('vulnerability_detail', vuln_id=vuln.id) }}" class="text-decoration-none">
+                                                <strong>{{ vuln.title }}</strong>
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">{{ vuln.description[:100] }}...</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'danger' if vuln.severity == 'critical' else 'warning' if vuln.severity == 'high' else 'info' if vuln.severity == 'medium' else 'success' }}">
+                                                {{ vuln.severity }}
+                                            </span>
+                                        </td>
+                                        <td>{{ vuln.category }}</td>
+                                        <td>{{ vuln.host or 'N/A' }}</td>
+                                        <td>{{ vuln.port or 'N/A' }}</td>
+                                        <td>
+                                            {% if vuln.cve_id %}
+                                                <a href="https://nvd.nist.gov/vuln/detail/{{ vuln.cve_id }}" target="_blank" class="text-decoration-none">
+                                                    {{ vuln.cve_id }}
+                                                </a>
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if vuln.status == 'resolved' else 'warning' if vuln.status == 'in_progress' else 'danger' }}">
+                                                {{ vuln.status.replace('_', ' ').title() }}
+                                            </span>
+                                        </td>
+                                        <td>{{ vuln.discovered_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('vulnerability_detail', vuln_id=vuln.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button class="btn btn-sm btn-outline-info" onclick="analyzeVulnerability({{ vuln.id }})">
+                                                    <i class="fas fa-brain"></i>
+                                                </button>
+                                                <div class="btn-group" role="group">
+                                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="#" onclick="updateVulnerabilityStatus({{ vuln.id }}, 'in_progress')">Mark In Progress</a></li>
+                                                        <li><a class="dropdown-item" href="#" onclick="updateVulnerabilityStatus({{ vuln.id }}, 'resolved')">Mark Resolved</a></li>
+                                                        <li><a class="dropdown-item" href="#" onclick="updateVulnerabilityStatus({{ vuln.id }}, 'false_positive')">Mark False Positive</a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if vulnerabilities.pages > 1 %}
+                        <nav aria-label="Vulnerability pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if vulnerabilities.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('vulnerabilities', page=vulnerabilities.prev_num, severity=severity_filter, status=status_filter, category=category_filter) }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in vulnerabilities.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != vulnerabilities.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('vulnerabilities', page=page_num, severity=severity_filter, status=status_filter, category=category_filter) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if vulnerabilities.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('vulnerabilities', page=vulnerabilities.next_num, severity=severity_filter, status=status_filter, category=category_filter) }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                            <h5 class="text-muted">No vulnerabilities found</h5>
+                            <p class="text-muted">Your security posture is excellent!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Update Modal -->
+<div class="modal fade" id="bulkUpdateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Update Vulnerabilities</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkUpdateForm">
+                    <div class="mb-3">
+                        <label for="bulkStatus" class="form-label">Status</label>
+                        <select class="form-select" id="bulkStatus" name="status">
+                            <option value="">No change</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="false_positive">False Positive</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulkAssignedTo" class="form-label">Assigned To</label>
+                        <input type="text" class="form-control" id="bulkAssignedTo" name="assigned_to">
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulkPriority" class="form-label">Remediation Priority</label>
+                        <select class="form-select" id="bulkPriority" name="remediation_priority">
+                            <option value="">No change</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="performBulkUpdate()">Update Selected</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/vulnerabilities.js') }}"></script>
+<script>
+// Load vulnerability statistics
+document.addEventListener('DOMContentLoaded', function() {
+    loadVulnerabilityStats();
+});
+</script>
+{% endblock %}

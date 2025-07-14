@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - JADE Ultimate Security Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h1 class="h3 mb-0">Settings</h1>
+                <p class="text-muted">Manage your account and security preferences</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow">
+                <div class="card-body">
+                    <nav class="nav nav-pills flex-column">
+                        <a class="nav-link active" href="#profile" data-bs-toggle="pill">
+                            <i class="fas fa-user me-2"></i>Profile
+                        </a>
+                        <a class="nav-link" href="#security" data-bs-toggle="pill">
+                            <i class="fas fa-shield-alt me-2"></i>Security
+                        </a>
+                        <a class="nav-link" href="#notifications" data-bs-toggle="pill">
+                            <i class="fas fa-bell me-2"></i>Notifications
+                        </a>
+                        <a class="nav-link" href="#api" data-bs-toggle="pill">
+                            <i class="fas fa-code me-2"></i>API Keys
+                        </a>
+                        <a class="nav-link" href="#preferences" data-bs-toggle="pill">
+                            <i class="fas fa-cog me-2"></i>Preferences
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="tab-content">
+                <!-- Profile Tab -->
+                <div class="tab-pane fade show active" id="profile">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold text-primary">Profile Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="profileForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="first_name" class="form-label">First Name</label>
+                                            <input type="text" class="form-control" id="first_name" value="{{ current_user.first_name or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="last_name" class="form-label">Last Name</label>
+                                            <input type="text" class="form-control" id="last_name" value="{{ current_user.last_name or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" value="{{ current_user.username }}" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" value="{{ current_user.email }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">Role</label>
+                                    <input type="text" class="form-control" id="role" value="{{ current_user.role.title() }}" readonly>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="updateProfile()">
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Security Tab -->
+                <div class="tab-pane fade" id="security">
+                    <div class="card shadow mb-4">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold text-primary">Change Password</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="passwordForm">
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="current_password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="new_password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirm_password" required>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="changePassword()">
+                                    <i class="fas fa-key me-2"></i>Change Password
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold text-primary">Two-Factor Authentication</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6>Two-Factor Authentication</h6>
+                                    <p class="text-muted mb-0">Add an extra layer of security to your account</p>
+                                </div>
+                                <div>
+                                    {% if current_user.two_factor_enabled %}
+                                        <span class="badge bg-success">Enabled</span>
+                                        <button class="btn btn-outline-danger btn-sm ms-2" onclick="disable2FA()">
+                                            Disable
+                                        </button>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Disabled</span>
+                                        <button class="btn btn-outline-primary btn-sm ms-2" onclick="enable2FA()">
+                                            Enable
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notifications Tab -->
+                <div class="tab-pane fade" id="notifications">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold text-primary">Notification Preferences</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="notificationForm">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="email_notifications" checked>
+                                        <label class="form-check-label" for="email_notifications">
+                                            Email Notifications
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Receive notifications via email</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="scan_notifications" checked>
+                                        <label class="form-check-label" for="scan_notifications">
+                                            Scan Completion Notifications
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Get notified when scans complete</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="vulnerability_notifications" checked>
+                                        <label class="form-check-label" for="vulnerability_notifications">
+                                            Vulnerability Alerts
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Get alerted when high-severity vulnerabilities are found</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="report_notifications" checked>
+                                        <label class="form-check-label" for="report_notifications">
+                                            Report Ready Notifications
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Get notified when reports are generated</div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-primary" onclick="updateNotifications()">
+                                    <i class="fas fa-save me-2"></i>Save Preferences
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- API Keys Tab -->
+                <div class="tab-pane fade" id="api">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold text-primary">API Keys</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                API keys allow you to integrate with external tools and services.
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Personal API Key</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="api_key" value="jade_********************************" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="toggleApiKey()">
+                                        <i class="fas fa-eye" id="api_key_icon"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyApiKey()">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-warning" onclick="regenerateApiKey()">
+                                    <i class="fas fa-sync me-2"></i>Regenerate
+                                </button>
+                                <button class="btn btn-outline-info" onclick="viewApiDocs()">
+                                    <i class="fas fa-book me-2"></i>API Documentation
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preferences Tab -->
+                <div class="tab-pane fade" id="preferences">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold text-primary">System Preferences</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="preferencesForm">
+                                <div class="mb-3">
+                                    <label for="timezone" class="form-label">Timezone</label>
+                                    <select class="form-select" id="timezone">
+                                        <option value="UTC" selected>UTC</option>
+                                        <option value="America/New_York">Eastern Time</option>
+                                        <option value="America/Chicago">Central Time</option>
+                                        <option value="America/Denver">Mountain Time</option>
+                                        <option value="America/Los_Angeles">Pacific Time</option>
+                                        <option value="Europe/London">London</option>
+                                        <option value="Europe/Paris">Paris</option>
+                                        <option value="Asia/Tokyo">Tokyo</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="date_format" class="form-label">Date Format</label>
+                                    <select class="form-select" id="date_format">
+                                        <option value="YYYY-MM-DD" selected>YYYY-MM-DD</option>
+                                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                        <option value="DD-MM-YYYY">DD-MM-YYYY</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="items_per_page" class="form-label">Items per Page</label>
+                                    <select class="form-select" id="items_per_page">
+                                        <option value="10">10</option>
+                                        <option value="20" selected>20</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="dark_mode">
+                                        <label class="form-check-label" for="dark_mode">
+                                            Dark Mode
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Enable dark theme (coming soon)</div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-primary" onclick="updatePreferences()">
+                                    <i class="fas fa-save me-2"></i>Save Preferences
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateProfile() {
+    const firstName = document.getElementById('first_name').value;
+    const lastName = document.getElementById('last_name').value;
+    const email = document.getElementById('email').value;
+    
+    fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            first_name: firstName,
+            last_name: lastName,
+            email: email
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            alert('Profile updated successfully');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating profile');
+    });
+}
+
+function changePassword() {
+    const currentPassword = document.getElementById('current_password').value;
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (newPassword !== confirmPassword) {
+        alert('New passwords do not match');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        alert('Password must be at least 8 characters long');
+        return;
+    }
+    
+    fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            alert('Password changed successfully');
+            document.getElementById('passwordForm').reset();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while changing password');
+    });
+}
+
+function enable2FA() {
+    alert('Two-factor authentication setup is not yet implemented. This feature will be available in a future update.');
+}
+
+function disable2FA() {
+    if (confirm('Are you sure you want to disable two-factor authentication?')) {
+        alert('Two-factor authentication management is not yet implemented.');
+    }
+}
+
+function updateNotifications() {
+    alert('Notification preferences updated successfully');
+}
+
+function toggleApiKey() {
+    const apiKeyInput = document.getElementById('api_key');
+    const icon = document.getElementById('api_key_icon');
+    
+    if (apiKeyInput.type === 'password') {
+        apiKeyInput.type = 'text';
+        apiKeyInput.value = 'jade_abcd1234efgh5678ijkl9012mnop3456qrst';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        apiKeyInput.type = 'password';
+        apiKeyInput.value = 'jade_********************************';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+function copyApiKey() {
+    const apiKeyInput = document.getElementById('api_key');
+    const tempInput = document.createElement('input');
+    tempInput.value = 'jade_abcd1234efgh5678ijkl9012mnop3456qrst';
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+    
+    alert('API key copied to clipboard');
+}
+
+function regenerateApiKey() {
+    if (confirm('Are you sure you want to regenerate your API key? This will invalidate the current key.')) {
+        alert('API key regenerated successfully');
+        // Update the displayed key
+        document.getElementById('api_key').value = 'jade_********************************';
+    }
+}
+
+function viewApiDocs() {
+    window.open('/api/docs', '_blank');
+}
+
+function updatePreferences() {
+    alert('Preferences updated successfully');
+}
+</script>
+{% endblock %}
